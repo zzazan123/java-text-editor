@@ -67,8 +67,6 @@ public class imsuperman extends JFrame {
         File home = new File(System.getProperty("user.home"));
         fileChooser.setCurrentDirectory(home);
         frame.setJMenuBar(menuBar);
-        ImageIcon icon = new ImageIcon("icon.png");
-        frame.setIconImage(icon.getImage());
         frame.setPreferredSize(new Dimension(1000, 600));
         open.setBackground(new Color(39, 39 ,39));
 
