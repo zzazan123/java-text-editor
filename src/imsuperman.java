@@ -227,7 +227,7 @@ public class imsuperman extends JFrame {
                 //file edit
                 fileEdit.setBackground(new Color(39, 39 ,39));
                 fileEdit.add(fileScrollPane);
-                fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 5, frame.getBounds().height - 5));
+                fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 25, frame.getBounds().height - 5));
                 fileEditTextArea.setBackground(new Color(29, 29, 29));
                 fileEditTextArea.setForeground(new Color(255, 255, 255));
 //                fileEditTextArea.setTabSize(4);
@@ -240,7 +240,7 @@ public class imsuperman extends JFrame {
 
                 frame.addComponentListener(new ComponentAdapter(){
                     public void componentResized(ComponentEvent e){
-                        fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 5, frame.getBounds().height - 5));
+                        fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 25, frame.getBounds().height - 5));
                     }
                 });
 
