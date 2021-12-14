@@ -1,9 +1,12 @@
 import com.google.gson.*;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.Element;
+import javax.swing.undo.UndoManager;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.*;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -29,8 +32,39 @@ public class imsuperman extends JFrame {
         JMenu Window = new JMenu("Window");
         JMenu View = new JMenu("View");
         // file edit
+        UndoManager undoMan = new UndoManager();
         JTextArea fileEditTextArea = new JTextArea();
+        fileEditTextArea.getDocument().addUndoableEditListener(undoMan);
         JScrollPane fileScrollPane = new JScrollPane(fileEditTextArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        JTextArea lines = new JTextArea("1");
+
+        fileEditTextArea.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
+        fileEditTextArea.getDocument().addDocumentListener(new DocumentListener() {
+            public String getText() {
+                int caretPosition = fileEditTextArea.getDocument().getLength();
+                Element root = fileEditTextArea.getDocument().getDefaultRootElement();
+                String text = "1 " + System.getProperty("line.separator");
+                for(int i = 2; i < root.getElementIndex(caretPosition) + 2; i++) {
+                    text += i + System.getProperty("line.separator");
+                }
+                return text;
+            }
+            @Override
+            public void changedUpdate(DocumentEvent de) {
+                lines.setText(getText());
+            }
+            @Override
+            public void insertUpdate(DocumentEvent de) {
+                lines.setText(getText());
+            }
+            @Override
+            public void removeUpdate(DocumentEvent de) {
+                lines.setText(getText());
+            }
+        });
+        fileScrollPane.getViewport().add(fileEditTextArea);
+        fileScrollPane.setRowHeaderView(lines);
+        lines.setEditable(false);
         // folder edit
         JTextArea folderEditTextArea = new JTextArea();
         JScrollPane folderScrollPane = new JScrollPane(folderEditTextArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -51,8 +85,27 @@ public class imsuperman extends JFrame {
         });
 
         // File
+        JMenuItem Undo = new JMenuItem("Undo");
+        JMenuItem Redo = new JMenuItem("Redo");
         JMenuItem Save = new JMenuItem("Save");
 
+        Undo.addActionListener(e -> {
+            if (undoMan.canUndo()) {
+                undoMan.undo();
+            }
+        });
+        Undo.setAccelerator(KeyStroke.getKeyStroke('Z', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+
+        Redo.addActionListener(e -> {
+            if (undoMan.canRedo()) {
+                undoMan.redo();
+            }
+        });
+        Redo.setAccelerator(KeyStroke.getKeyStroke('Y', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+
+        File.add(Undo);
+        File.add(Redo);
+        File.addSeparator();
         Window.add(Minimize);
         Window.add(Zoom);
         menuBar.add(File);
@@ -174,12 +227,22 @@ public class imsuperman extends JFrame {
                 //file edit
                 fileEdit.setBackground(new Color(39, 39 ,39));
                 fileEdit.add(fileScrollPane);
-                fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 10, frame.getBounds().height - 35));
+                fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 5, frame.getBounds().height - 5));
                 fileEditTextArea.setBackground(new Color(29, 29, 29));
                 fileEditTextArea.setForeground(new Color(255, 255, 255));
-                fileEditTextArea.setTabSize(4);
+//                fileEditTextArea.setTabSize(4);
                 fileEditTextArea.setCaretColor(new Color(255, 255, 255));
                 fileEditTextArea.setCaretPosition(fileEditTextArea.getDocument().getLength());
+                lines.setBackground(new Color(38, 39, 40));
+                lines.setForeground(new Color(147, 146, 145));
+                fileScrollPane.setBorder(null);
+                fileEditTextArea.setTabSize(2);
+
+                frame.addComponentListener(new ComponentAdapter(){
+                    public void componentResized(ComponentEvent e){
+                        fileScrollPane.setPreferredSize(new Dimension(frame.getBounds().width - 5, frame.getBounds().height - 5));
+                    }
+                });
 
                 AtomicInteger fontSize = new AtomicInteger(13);
                 // View
@@ -190,6 +253,7 @@ public class imsuperman extends JFrame {
                         fontSize.set(fontSize.get() + 2);
                         Font myFont = new Font("Lucida Grande", Font.PLAIN, fontSize.get());
                         fileEditTextArea.setFont(myFont);
+                        lines.setFont(myFont);
                     }
                 });
                 FontPlus.setAccelerator(KeyStroke.getKeyStroke('=', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
@@ -199,9 +263,9 @@ public class imsuperman extends JFrame {
                 FontMinus.addActionListener(ex -> {
                     if (fontSize.get() >= 5) {
                         fontSize.set(fontSize.get() - 2);
-
                         Font myFont = new Font("Lucida Grande", Font.PLAIN, fontSize.get());
                         fileEditTextArea.setFont(myFont);
+                        lines.setFont(myFont);
                     }
                 });
                 FontMinus.setAccelerator(KeyStroke.getKeyStroke('-', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
@@ -219,6 +283,8 @@ public class imsuperman extends JFrame {
                 } catch (IOException ea) {
                     System.err.format("IOException: %s%n", ea);
                 }
+
+                undoMan.die();
 
                 frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
                 frame.addWindowListener(new WindowAdapter() {
@@ -370,45 +436,7 @@ public class imsuperman extends JFrame {
                 folderEditTextArea.setCaretColor(new Color(255, 255, 255));
                 folderEditTextArea.setCaretPosition(folderEditTextArea.getDocument().getLength());
 
-//                AtomicInteger fontSize = new AtomicInteger(13);
                 // View
-//                JMenuItem FontPlus = new JMenuItem("Font Plus");
-//
-//                FontPlus.addActionListener(ea -> {
-//                    if (fontSize.get() <= 23) {
-//                        fontSize.set(fontSize.get() + 2);
-//                        Font myFont = new Font("Lucida Grande", Font.PLAIN, fontSize.get());
-//                        folderEditTextArea.setFont(myFont);
-//                    }
-//                });
-//                FontPlus.setAccelerator(KeyStroke.getKeyStroke('=', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-//
-//                JMenuItem FontMinus = new JMenuItem("Font Minus");
-//
-//                FontMinus.addActionListener(ex -> {
-//                    if (fontSize.get() >= 5) {
-//                        fontSize.set(fontSize.get() - 2);
-//
-//                        Font myFont = new Font("Lucida Grande", Font.PLAIN, fontSize.get());
-//                        folderEditTextArea.setFont(myFont);
-//                    }
-//                });
-//                FontMinus.setAccelerator(KeyStroke.getKeyStroke('-', Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-
-//                View.add(FontPlus);
-//                View.add(FontMinus);
-
-//                try (FileReader reader = new FileReader(folder.getPath());
-//                     BufferedReader br = new BufferedReader(reader)) {
-//                    String line;
-//                    folderEditTextArea.setText("");
-//                    while ((line = br.readLine()) != null) {
-//                        folderEditTextArea.append(line + "\n");
-//                    }
-//
-//                } catch (IOException ea) {
-//                    System.err.format("IOException: %s%n", ea);
-//                }
 
                 frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
                 frame.addWindowListener(new WindowAdapter() {
